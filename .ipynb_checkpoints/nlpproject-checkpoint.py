@@ -3,39 +3,48 @@ from nltk.tokenize import word_tokenize
 from nltk.stem import PorterStemmer, WordNetLemmatizer
 from sklearn.feature_extraction.text import CountVectorizer
 
-# Download necessary NLTK data packages for tokenization and lemmatization
+# Download required datasets
 nltk.download('punkt')
 nltk.download('wordnet')
 nltk.download('omw-1.4')
 
 # ==========================================
-# 0. THE RAW DATA (Our Unique Dataset)
+# 0. RAW DATA
 # ==========================================
+
 reviews = [
-    "The acting was amazing!",
-    "The actors were acting terribly.",
-    "I loved the amazing acting."
+    "The athlete is running fast.",
+    "The athlete ran yesterday.",
+    "Running improves health."
 ]
 
-print("--- 0. RAW DATA ---")
+print("\n--- 0. RAW DATA ---")
+
 for i, review in enumerate(reviews, 1):
-    print(f"Review {i}: '{review}'")
-print("\n" + "="*50 + "\n")
+    print(f"Sentence {i}: {review}")
+
+print("\n" + "="*50)
 
 # ==========================================
 # 1. TOKENIZATION
 # ==========================================
-# We split the sentences into individual lowercased word tokens.
-tokenized_reviews = [word_tokenize(review.lower()) for review in reviews]
 
-print("--- 1. TOKENIZATION ---")
+tokenized_reviews = [
+    word_tokenize(review.lower())
+    for review in reviews
+]
+
+print("\n--- 1. TOKENIZATION ---")
+
 for i, tokens in enumerate(tokenized_reviews, 1):
-    print(f"Review {i} Tokens: {tokens}")
-print("\n" + "="*50 + "\n")
+    print(f"Sentence {i}: {tokens}")
+
+print("\n" + "="*50)
 
 # ==========================================
-# 2. STEMMING vs LEMMATIZATION
+# 2. STEMMING VS LEMMATIZATION
 # ==========================================
+
 stemmer = PorterStemmer()
 lemmatizer = WordNetLemmatizer()
 
@@ -43,64 +52,113 @@ stemmed_reviews = []
 lemmatized_reviews = []
 
 for tokens in tokenized_reviews:
-    # Stem every word in the token list
-    stemmed_reviews.append([stemmer.stem(word) for word in tokens])
-    # Lemmatize every word (telling it they are verbs 'v' helps it handle tenses)
-    lemmatized_reviews.append([lemmatizer.lemmatize(word, pos='v') for word in tokens])
 
-print("--- 2. CLEANING COMPARISON ---")
-print(f"Original:   {tokenized_reviews[1]}")
-print(f"Stemmed:    {stemmed_reviews[1]}  <-- Notice 'terribli' (chopped/not a real word)")
-print(f"Lemmatized: {lemmatized_reviews[1]} <-- Notice 'were' -> 'be' and 'acting' -> 'act'")
-print("\n" + "="*50 + "\n")
+    stemmed_reviews.append(
+        [stemmer.stem(word) for word in tokens]
+    )
+
+    lemmatized_reviews.append(
+        [lemmatizer.lemmatize(word, pos='v')
+         for word in tokens]
+    )
+
+print("\n--- 2. STEMMING VS LEMMATIZATION ---")
+
+print("Original:")
+print(tokenized_reviews)
+
+print("\nStemmed:")
+print(stemmed_reviews)
+
+print("\nLemmatized:")
+print(lemmatized_reviews)
+
+print("\nObserve:")
+print("running → run")
+print("ran → run")
+
+print("\n" + "="*50)
 
 # ==========================================
-# 3. UNIQUE WORDS & BAG OF WORDS
+# 3. UNIQUE WORDS + BAG OF WORDS
 # ==========================================
-# Convert our lemmatized token lists back into strings so Scikit-Learn can read them
-cleaned_sentences = [" ".join(tokens) for tokens in lemmatized_reviews]
 
-# CountVectorizer automatically builds our "Bag of Unique Words"
+cleaned_sentences = [
+    " ".join(tokens)
+    for tokens in lemmatized_reviews
+]
+
 vectorizer = CountVectorizer()
-bag_of_words_matrix = vectorizer.fit_transform(cleaned_sentences)
 
-# Get our Unique Vocabulary List
-unique_vocabulary = vectorizer.get_feature_names_out()
+bag_matrix = vectorizer.fit_transform(
+    cleaned_sentences
+)
 
-print("--- 3. UNIQUE VOCABULARY ---")
-print(f"Our Global Vocabulary List: {list(unique_vocabulary)}")
+unique_words = (
+    vectorizer.get_feature_names_out()
+)
+
+print("\n--- 3. UNIQUE VOCABULARY ---")
+
+print(list(unique_words))
+
 print("\n--- BAG OF WORDS MATRIX ---")
-print(bag_of_words_matrix.toarray()) 
-print("*(Each row represents a review, each column is the count of a unique word)*")
-print("\n" + "="*50 + "\n")
+
+print(
+    bag_matrix.toarray()
+)
+
+print("\nRows → Sentences")
+print("Columns → Unique Words")
+
+print("\n" + "="*50)
 
 # ==========================================
-# 4. ONE-HOT ENCODING (Manual Representation)
+# 4. ONE HOT ENCODING
 # ==========================================
-print("--- 4. ONE-HOT ENCODING ---")
-# To show you what one-hot looks like, let's look at our unique vocabulary.
-# Every word gets an isolated slot of 1s and 0s based on its index.
-vocab_size = len(unique_vocabulary)
 
-for index, word in enumerate(unique_vocabulary):
-    one_hot_vector = [0] * vocab_size
-    one_hot_vector[index] = 1
-    print(f"'{word}': {one_hot_vector}")
-print("\n" + "="*50 + "\n")
+print("\n--- 4. ONE HOT ENCODING ---")
+
+size = len(unique_words)
+
+for i, word in enumerate(unique_words):
+
+    vector = [0]*size
+
+    vector[i] = 1
+
+    print(
+        f"{word} → {vector}"
+    )
+
+print("\n" + "="*50)
 
 # ==========================================
-# 5. CONCEPTUAL WORD EMBEDDINGS
+# 5. WORD EMBEDDINGS
 # ==========================================
-print("--- 5. WORD EMBEDDINGS (Simulated) ---")
-# Real Deep Learning models generate continuous floating-point vectors (e.g., 300 dimensions).
-# Here is a mock-up of how a deep learning model groups meanings in 2D space:
+
+print("\n--- 5. WORD EMBEDDINGS ---")
+
 mock_embeddings = {
-    "love": [0.89, 0.12],   # Positive emotion coordinates
-    "amaze": [0.85, 0.15],  # Similar to love! Close numbers.
-    "terribly": [-0.78, -0.65], # Negative emotion coordinates. Way far away!
-    "the": [0.01, 0.02]     # Neutral filler word near the center.
+
+    "run":[0.92,0.87],
+
+    "running":[0.91,0.86],
+
+    "ran":[0.90,0.88],
+
+    "health":[0.20,0.15]
+
 }
 
-for word, vector in mock_embeddings.items():
-    print(f"Embedding Vector for '{word}': {vector}")
-print("\nNotice how 'love' and 'amaze' have very similar math values!")
+for word, vector in (
+    mock_embeddings.items()
+):
+
+    print(
+        f"{word} → {vector}"
+    )
+
+print("\nNotice:")
+print("run, running, ran have close values → similar meaning")
+print("health is far → different meaning")
